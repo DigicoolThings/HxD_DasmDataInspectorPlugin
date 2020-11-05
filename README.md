@@ -53,7 +53,7 @@ The .csv definition files (configured and referenced from the .ini file), hopefu
 - ArgumentSignedUnsigned: Determines if the extracted Argument should be treated as a Signed or Unsigned value. 
 - DasmString: The decoded Disassembly string that is to be rendered in the data inspector. The .ini file specifies a wildcard (char or string), which you include to identify where the extracted / formatted Argument should be substituted into the string. 
 
-Reviewing the above in combination with the included (completed) Dasm6800.csv file should clarify the definition file structure. 
+Reviewing the above in combination with the included (completed) Dasm6800.csv file (and the currently incomplete Dasm6809.csv file), should clarify the definition file structure. 
 
 ## Features
 
