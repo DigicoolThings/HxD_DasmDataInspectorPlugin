@@ -1,4 +1,4 @@
-# Disassembly Plugin for HxD's Data inspector
+# Disassembly Plugin for HxD's Data inspector (HxD v2.4.0.0)
 
 This plugin is for Maël Hörz's excellant HxD hex and disk editor, which is available at: http://mh-nexus.de/hxd
 
@@ -12,7 +12,7 @@ As I was seeing byte differences in my 6809 ROM comparisons, I was having to man
 I initially looked for a pre-written Disassembler that I could integrate via Maël's published plugin framework: https://github.com/maelh/hxd-plugin-framework   
 
 But I quickly came to the conclusion that there wasn't really anything substantial that I could (relatively easily) migrate for this purpose.
-Plus, with my retro CPU interests, I could see that I'd potentially want to also add 6800 and 6502 code disassembly (maybe even 68000?), and looking at existing disassemblers, I really didn't like the "hard-coded" processor specific parsing approach.
+Plus, with my retro CPU interests, I could see that I'd potentially want to also add 6800 and 6502 code disassembly (ed. which I have now done), and maybe even 68000, and looking at existing disassemblers, I really didn't like the "hard-coded" processor specific parsing approach.
   
 ## Implementation
 
@@ -23,49 +23,71 @@ In other words, create a Disassembly plugin that anyone could add support for an
 To achieve this, the plugin .dll (DasmDataInspectorPlugin.dll) references a .ini file (DasmDataInspectorPlugin.ini) for parameters, including details of the configured CPU's / Disassembly types.
 For each configured CPU, a .csv based instruction definition file is also included.
 
-To get started, I've initially created a Motorola MC6800 definition file as: Dasm6800.csv
-I've also started on a MC6809 definition file, and I'm also planning a 6502 definition file.
+To get started, I initially created a Motorola MC6800 definition file as: Dasm6800.csv
+I've now also added several other processor definition files including 6502 etc. (refer below), and have started on a MC6809 definition file.
 
 To assist with debugging your own definition .csv files (or any changes you might want to make), the .ini file provides for a log file to be enabled. This provides visibility of the .csv file parsing and format errors (typos?) that are identified.
 
 Note that while this implementation provides great flexibility for adding additional CPU Disassembly support, it's target audience is retro microprocessors. These generally have relatively simple instruction sets and addressing modes, which the definition files easily cater for.
-However, I suspect limitation may be found if attempting to define more advanced / modern ISA's. Specifically, where a CPU has a significantly more complex instruction set, resulting in an excesively large number of resulting possible opcode + operand combinations.    
+However, I suspect limitation may be found if attempting to define more advanced / modern ISA's. Specifically, where a CPU has a significantly more complex instruction set, resulting in an excessively large number of resulting possible opcode + operand combinations.    
 
 ## Installation
+
+Firstly, ensure you are running the current HxD 2.4.0.0 version.  This plugin is compiled for 2.4.0.0.
+When the next HxD version is officially released (eg. 2.5.0.0), I will update the plugin here.
 
 As per Maël's instructions for the plugin framework, the files should all be installed into a "Plugins" sub-directory of your HxD installation directory.
 
 First select either the Win64 or Win32 folder .dll version (based on your Windows installation), and copy this folder into your HxD installation directory.
-Then also copy the Common folder, which contains the DasmDataInspectorPlugin.ini and CPU definition .csv files.
+
+Then also copy the Common folder, which contains the DasmDataInspectorPlugin.ini and the various CPU definition .csv files.
+
+Finally (optional), you can edit the DasmDataInspectorPlugin.ini file to include only the specific DasmTypes that you currently require / are interest in.  As per the documented .ini file, you can have up to 8 different Disassembly types at a time, however each one adds some HxD start-up time overhead.   
 
 ## Configuration
 
-Please refer to the .ini file for documentation of the various settings included. Hopefully this should be self explanatory.
+Further to the above note on DasmTypes, please refer to the .ini file for documentation of the various settings included. Hopefully this should all be self explanatory.
 
-The .csv definition files (configured and referenced from the .ini file), hopefully have a self explanatory header line. Note this header line is purely optional, and is just included for readability / reference. 
+The .csv definition files (configured and referenced from the .ini file), have relatively self explanatory column titles in the header line.  Note this header line is purely optional, and is just included for readability / reference. Leaving the header line in place has no impact on load time.
 
-## CSV file columns
+## CSV file column descriptions
 
-- OpcodeBytes: The fixed (static) Hex bytes that comprise each unique instruction opcode. 
-- OperandBytes: Any additional Hex Bytes that comprise the instruction Operand. Multi-byte Operands are specified with the target CPU's appropriate Endianness (which is specified in the .ini file).  
-- OperandArgumentMask: The Hex Mask that should be used to extract any Argument from the Operand Bytes. Note that the inverted Mask also effectively defines any fixed (static) portion of the Operand. 
-- ArgumentHexDec: Determines if the extracted Argument should be rendered in Hex or Decimal format.
-- ArgumentSignedUnsigned: Determines if the extracted Argument should be treated as a Signed or Unsigned value. 
-- DasmString: The decoded Disassembly string that is to be rendered in the data inspector. The .ini file specifies a wildcard (char or string), which you include to identify where the extracted / formatted Argument should be substituted into the string. 
+- OpcodeBytes: The fixed (static) bytes, specified in Hex, that comprise each unique instruction Opcode. 
+- OperandBytes: Any additional Hex Bytes that make up the full instruction and contain the instruction Operand(s). Multi-byte Operands are specified in the byte sequence that they appear in memory. The extracted Operand(s) will however respect the target CPU's Endianness (specified in the .ini file).  
+- FirstOperandMask: The Hex bit mask that identifies the first Operand to be extracted from the Operand Bytes. 
+- FirstOperandHexDec: Determines if the extracted first Operand should be rendered in Hex or Decimal format.
+- FirstOperandSignedUnsigned: Determines if the extracted first Operand should be treated as a Signed or Unsigned value. Typically, Signed is used for Relative reference Operands.  
+- SecondOperandMask: As for FirstOperandMask, this is the Hex bit mask that identifies any required second Operand to be extracted from the Operand Bytes. 
+- SecondOperandHexDec: As above for the first Operand, this determines if any extracted second Operand should be rendered in Hex or Decimal format.
+- FirstOperandSignedUnsigned: As above for the first Operand, this determines if any extracted second Operand should be treated as a Signed or Unsigned value.
+- AssemblyString: The Disassembled instruction string that is to be rendered in the HxD data inspector. The .ini file specifies first and second Operand wildcard characters (or strings), which you include to identify where the extracted / formatted Operand(s) should be substituted into the string. 
 
-Reviewing the above in combination with the included (completed) Dasm6800.csv file (and the currently incomplete Dasm6809.csv file), should clarify the definition file structure. 
+Reviewing the above in combination with the various included (completed) .csv files (and the currently incomplete Dasm6809.csv file), should clarify the definition file structure. 
 
 ## Features
 
-- Supports any byte size Opcode (and optional Operand size).
+- Supports any byte count sized Opcode and optional Operand byte count.
 
-- Configurable per CPU, for either Little Endian or Big Endian CPU Operand / Argument byte sequences.
+- Configurable per CPU, for either Little Endian or Big Endian Operand byte sequences.
 
-- Supports Operand Argument extraction and automatic normalisation as either 8-bit, 16-bit, 32-bit or 64-bit values.
+- Supports extraction of up to two Operands per instruction, with automatic normalisation of each extracted Operand as either 8-bit, 16-bit, 32-bit or 64-bit values.
 
-- Configurable per Opcode + Operand, for Unsigned or Signed Arguments.
+- Configurable per instruction Operand for Unsigned or Signed values. For example, Relative offset Operand values would typically be configured as Signed values.
 
-- Configurable per Opcode + Operand, for Argument rendering in either Hex or Decimal format. For example, Address or data references would logically be rendered in their native Hex format, however relative offsets are perhaps better rendered in Decimal for easier interpretation.
+- Configurable per instruction Operand for rendering the Operand value in either Hex or Decimal format.
+
+## CPU ISA's currently defined (Complete), or in progress (Incomplete)
+
+- Motorola MC6800 8-bit CPU (Dasm6800.csv) - Complete
+- MOS Technology 6502 8-bit CPU (Dasm6502.csv) - Complete
+- Western Design Center (WDC) 65C02 8-bit CPU (Dasm65C02.csv) - Complete
+- Western Design Center (WDC) W65C02S 8-bit CPU (DasmW65C02S.csv) - Complete
+- Western Design Center (WDC) 65C816 8/16-bit CPU (Dasm65C816.csv) - Complete
+- Motorola MC6809 8/16-bit CPU (Dasm6809.csv) - Incomplete!
+
+All the Complete definitions have been carefully checked, however if you identify any coding errors please raise an issue so these can be corrected.
+
+Also of note, currently only W65C02S and 65C816 include instructions having two Operands. 
 
 ## License
 
