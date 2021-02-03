@@ -91,8 +91,8 @@ Reviewing the above, in combination with the various included (completed) .csv f
 All the Complete definitions have been carefully checked, however if you identify any coding errors please raise an issue so these can be corrected.
 
 Of Note:
-a. Currently only the W65C02S and 65C816 definitions include instructions having two Operands.
-b. Currently the MC6809 is the most complex definition, due to it's comprehensive addressing modes and extended multiple-byte operands. The MC6809 definition includes 5,530 unique instructions, as compared to the MC6800 with only 197 unique instruction definitions, or the simplest (MOS 6502) which requires only 151 unique instruction definitions. 
+- Currently only the W65C02S and 65C816 definitions include instructions having two Operands.
+- Currently the MC6809 is the most complex definition, due to it's comprehensive addressing modes and extended multiple-byte opcodes. The MC6809 definition includes 5,530 unique instructions. For comparison the MC6800 has only 197 unique instruction definitions, or the simplest MOS 6502 which requires only 151 unique instruction definitions. 
 
 ## Source
 
