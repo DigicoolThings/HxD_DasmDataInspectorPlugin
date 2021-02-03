@@ -1,6 +1,8 @@
-# Disassembly Plugin for HxD's Data inspector (HxD v2.4.0.0)
+# Disassembly Plugin for HxD's Data inspector
 
 This plugin is for Maël Hörz's excellant HxD hex and disk editor, which is available at: http://mh-nexus.de/hxd
+
+This plugin is compiled for HxD v2.5.0.0
 
 ## Background
 
@@ -24,7 +26,7 @@ To achieve this, the plugin .dll (DasmDataInspectorPlugin.dll) references a .ini
 For each configured CPU, a .csv based instruction definition file is also included.
 
 To get started, I initially created a Motorola MC6800 definition file as: Dasm6800.csv
-I've now also added several other processor definition files including 6502 etc. (refer below), and have started on a MC6809 definition file.
+I've now also added several other processor definition files including 6502 family etc. (refer below), and also the more complex MC6809 8/16 bit processor definition file.
 
 To assist with debugging your own definition .csv files (or any changes you might want to make), the .ini file provides for a log file to be enabled. This provides visibility of the .csv file parsing and format errors (typos?) that are identified.
 
@@ -33,20 +35,19 @@ However, I suspect limitation may be found if attempting to define more advanced
 
 ## Installation
 
-Firstly, ensure you are running the current HxD 2.4.0.0 version.  This plugin is compiled for 2.4.0.0.
-When the next HxD version is officially released (eg. 2.5.0.0), I will update the plugin here.
+Firstly, ensure you are running HxD 2.5.0.0 version.  This plugin is currently compiled for 2.5.0.0.  If a later HxD version requires changes to the plug-in interface, I will update the plugin here (as required).
 
 As per Maël's instructions for the plugin framework, the files should all be installed into a "Plugins" sub-directory of your HxD installation directory.
 
-First select either the Win64 or Win32 folder .dll version (based on your Windows installation), and copy this folder into your HxD installation directory.
+First select either the Win64 or Win32 folder .dll version (based on your Windows installation), and copy the content of this folder into your HxD installation directory, creating (or updating) the "Plugins" sub-directory of your HxD installation directory.
 
-Then also copy the Common folder, which contains the DasmDataInspectorPlugin.ini and the various CPU definition .csv files.
+Then also copy the contents of the Common folder, which contains the DasmDataInspectorPlugin.ini and the various CPU definition .csv files (once again, in the "Plugins" sub-directory).
 
-Finally (optional), you can edit the DasmDataInspectorPlugin.ini file to include only the specific DasmTypes that you currently require / are interest in.  As per the documented .ini file, you can have up to 8 different Disassembly types at a time, however each one adds some HxD start-up time overhead.   
+Finally (optional - but recommended!), you can edit the DasmDataInspectorPlugin.ini file to include only the specific DasmTypes that you currently require or are interest in.  As per the documented .ini file, you can have up to 8 different Disassembly types at a time, however each one adds some HxD start-up time overhead as the definition files are loaded and parsed. Therefore, depending on your system performance, you may not wish to load all (or multiple) DasmTypes.  
 
 ## Configuration
 
-Further to the above note on DasmTypes, please refer to the .ini file for documentation of the various settings included. Hopefully this should all be self explanatory.
+Further to the above note on DasmTypes, please refer to the .ini file for documentation on the various settings included. Hopefully this should all be self explanatory.
 
 The .csv definition files (configured and referenced from the .ini file), have relatively self explanatory column titles in the header line.  Note this header line is purely optional, and is just included for readability / reference. Leaving the header line in place has no impact on load time.
 
@@ -62,7 +63,7 @@ The .csv definition files (configured and referenced from the .ini file), have r
 - FirstOperandSignedUnsigned: As above for the first Operand, this determines if any extracted second Operand should be treated as a Signed or Unsigned value.
 - AssemblyString: The Disassembled instruction string that is to be rendered in the HxD data inspector. The .ini file specifies first and second Operand wildcard characters (or strings), which you include to identify where the extracted / formatted Operand(s) should be substituted into the string. 
 
-Reviewing the above in combination with the various included (completed) .csv files (and the currently incomplete Dasm6809.csv file), should clarify the definition file structure. 
+Reviewing the above, in combination with the various included (completed) .csv files (and the currently incomplete Dasm6809.csv file), should clarify the definition file structure. 
 
 ## Features
 
@@ -70,11 +71,13 @@ Reviewing the above in combination with the various included (completed) .csv fi
 
 - Configurable per CPU, for either Little Endian or Big Endian Operand byte sequences.
 
-- Supports extraction of up to two Operands per instruction, with automatic normalisation of each extracted Operand as either 8-bit, 16-bit, 32-bit or 64-bit values.
+- Supports extraction of up to two Operands per instruction, with automatic byte normalisation of each extracted Operand as being 1 to 8 bytes long (maximum of 64-bit Operands supported). For example, Operand masks of 8 bits or less would be rendered as a single byte, and a 24 bit Operand would be appropriately rendered as 3 bytes etc.  
 
-- Configurable per instruction Operand for Unsigned or Signed values. For example, Relative offset Operand values would typically be configured as Signed values.
+- Configurable, per instruction Operand, for Unsigned or Signed values. For example, Relative offset Operand values would typically be configured as Signed values.
 
-- Configurable per instruction Operand for rendering the Operand value in either Hex or Decimal format.
+- Configurable, per instruction Operand, for rendering each Operand value in either Hex or Decimal format.
+
+- Supports up to 32,767 unique instruction definitions per CPU definition file. 
 
 ## CPU ISA's currently defined (Complete), or in progress (Incomplete)
 
@@ -83,17 +86,23 @@ Reviewing the above in combination with the various included (completed) .csv fi
 - Western Design Center (WDC) 65C02 8-bit CPU (Dasm65C02.csv) - Complete
 - Western Design Center (WDC) W65C02S 8-bit CPU (DasmW65C02S.csv) - Complete
 - Western Design Center (WDC) 65C816 8/16-bit CPU (Dasm65C816.csv) - Complete
-- Motorola MC6809 8/16-bit CPU (Dasm6809.csv) - Incomplete!
+- Motorola MC6809 8/16-bit CPU (Dasm6809.csv) - Complete
 
 All the Complete definitions have been carefully checked, however if you identify any coding errors please raise an issue so these can be corrected.
 
-Also of note, currently only W65C02S and 65C816 include instructions having two Operands. 
+Of Note:
+a. Currently only the W65C02S and 65C816 definitions include instructions having two Operands.
+b. Currently the MC6809 is the most complex definition, due to it's comprehensive addressing modes and extended multiple-byte operands. The MC6809 definition includes 5,530 unique instructions, as compared to the MC6800 with only 197 unique instruction definitions, or the simplest (MOS 6502) which requires only 151 unique instruction definitions. 
+
+## Source
+
+The fully commented source code is available in the src folder (for those interested).  Note that the source code is not required for using this HxD DataInsepctor Plugin (the required compiled .dll is in the Win64 or Win32 folder), nor is it required for adding your own .csv CPU definitions (if you do create an additional CPU defintion file, please share it!).  
 
 ## License
 
-HxD Plugin Framework is Copyright (C) 2019-2020 Maël Hörz. The plugin framework is licensed under the MPL. 
+HxD Plugin Framework is Copyright (C) 2019-2021 Maël Hörz. The plugin framework is licensed under the MPL. 
 
-This Disassembly Plugin is distributed as per the MPL Larger Work definition and [licensed under the Apache License 2.0](LICENSE)
+This Disassembly Plugin is Copyright (C) 2021 DigicoolThings (Digicool Things), and distributed as per the MPL Larger Work definition and [licensed under the Apache License 2.0](LICENSE)
 
 ## Contact
 
