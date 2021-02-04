@@ -96,7 +96,9 @@ Of Note:
 
 ## Source
 
-The fully commented source code is available in the src folder (for those interested).  Note that the source code is not required for using this HxD DataInsepctor Plugin (the required compiled .dll is in the Win64 or Win32 folder), nor is it required for adding your own .csv CPU definitions (if you do create an additional CPU defintion file, please share it!).  
+The fully commented source code is available in the src folder (for those interested).  Note that the source code is not required for using this HxD DataInsepctor Plugin (the required compiled .dll is in the Win64 or Win32 folder), nor is it required for adding your own .csv CPU definitions (if you do create an additional CPU defintion file, please share it!).
+
+The source code was compiled with Delphi 10.3 Community Edition. The Community Edition is available free for non-profit use, however please refer to the Embarcadero website for their full license terms and to obtain the Delphi IDE.      
 
 ## License
 

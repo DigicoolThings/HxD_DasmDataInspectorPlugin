@@ -161,7 +161,7 @@ begin
         DelimPos := Pos(',', TempOpcode);
         if (DelimPos > 0) then
         begin
-          TempHexString:=LowerCase(StringReplace(Copy(TempOpcode,1,DelimPos-1),' ','',[rfReplaceAll]));
+          TempHexString:=AnsiString(LowerCase(StringReplace(Copy(TempOpcode,1,DelimPos-1),' ','',[rfReplaceAll])));
           Delete(TempOpcode,1,DelimPos);
           if (DelimPos > 1) and not(Odd(Length(TempHexString))) then
           begin
@@ -177,7 +177,7 @@ begin
               DelimPos := Pos(',', TempOpcode);
               if (DelimPos > 0) then
               begin
-                TempHexString:=LowerCase(StringReplace(Copy(TempOpcode,1,DelimPos-1),' ','',[rfReplaceAll]));
+                TempHexString:=AnsiString(LowerCase(StringReplace(Copy(TempOpcode,1,DelimPos-1),' ','',[rfReplaceAll])));
                 Delete(TempOpcode,1,DelimPos);
                 if not(Odd(Length(TempHexString))) then
                 begin
@@ -196,7 +196,7 @@ begin
                     DelimPos := Pos(',', TempOpcode);
                     if (DelimPos > 0) then
                     begin
-                      TempHexString:=LowerCase(StringReplace(Copy(TempOpcode,1,DelimPos-1),' ','',[rfReplaceAll]));
+                      TempHexString:=AnsiString(LowerCase(StringReplace(Copy(TempOpcode,1,DelimPos-1),' ','',[rfReplaceAll])));
                       Delete(TempOpcode,1,DelimPos);
                       if ((Length(TempHexString) div 2) <= Length(TempOpcodeDefinition.OperandBytes)) and not(Odd(Length(TempHexString))) then
                       begin
@@ -223,7 +223,7 @@ begin
                           DelimPos := Pos(',', TempOpcode);
                           if (DelimPos > 0) then
                           begin
-                            TempHexString:=LowerCase(StringReplace(Copy(TempOpcode,1,DelimPos-1),' ','',[rfReplaceAll]));
+                            TempHexString:=AnsiString(LowerCase(StringReplace(Copy(TempOpcode,1,DelimPos-1),' ','',[rfReplaceAll])));
                             Delete(TempOpcode,1,DelimPos);
                             if (Length(TempHexString) = 0) then TempHexString := 'h';
                             if (TempHexString[1] in ['h','d']) then
@@ -240,7 +240,7 @@ begin
                               DelimPos := Pos(',', TempOpcode);
                               if (DelimPos > 0) then
                               begin
-                                TempHexString:=LowerCase(StringReplace(Copy(TempOpcode,1,DelimPos-1),' ','',[rfReplaceAll]));
+                                TempHexString:=AnsiString(LowerCase(StringReplace(Copy(TempOpcode,1,DelimPos-1),' ','',[rfReplaceAll])));
                                 Delete(TempOpcode,1,DelimPos);
                                 if (Length(TempHexString) = 0) then TempHexString := 'u';
                                 if (TempHexString[1] in ['s','u']) then
@@ -259,7 +259,7 @@ begin
                                   DelimPos := Pos(',', TempOpcode);
                                   if (DelimPos > 0) then
                                   begin
-                                    TempHexString:=LowerCase(StringReplace(Copy(TempOpcode,1,DelimPos-1),' ','',[rfReplaceAll]));
+                                    TempHexString:=AnsiString(LowerCase(StringReplace(Copy(TempOpcode,1,DelimPos-1),' ','',[rfReplaceAll])));
                                     Delete(TempOpcode,1,DelimPos);
                                     if ((Length(TempHexString) div 2) <= Length(TempOpcodeDefinition.OperandBytes)) and not(Odd(Length(TempHexString))) then
                                     begin
@@ -286,7 +286,7 @@ begin
                                         DelimPos := Pos(',', TempOpcode);
                                         if (DelimPos > 0) then
                                         begin
-                                          TempHexString:=LowerCase(StringReplace(Copy(TempOpcode,1,DelimPos-1),' ','',[rfReplaceAll]));
+                                          TempHexString:=AnsiString(LowerCase(StringReplace(Copy(TempOpcode,1,DelimPos-1),' ','',[rfReplaceAll])));
                                           Delete(TempOpcode,1,DelimPos);
                                           if (Length(TempHexString) = 0) then TempHexString := 'h';
                                           if (TempHexString[1] in ['h','d']) then
@@ -303,7 +303,7 @@ begin
                                             DelimPos := Pos(',', TempOpcode);
                                             if (DelimPos > 0) then
                                             begin
-                                              TempHexString:=LowerCase(StringReplace(Copy(TempOpcode,1,DelimPos-1),' ','',[rfReplaceAll]));
+                                              TempHexString:=AnsiString(LowerCase(StringReplace(Copy(TempOpcode,1,DelimPos-1),' ','',[rfReplaceAll])));
                                               Delete(TempOpcode,1,DelimPos);
                                               if (Length(TempHexString) = 0) then TempHexString := 'u';
                                               if (TempHexString[1] in ['s','u']) then
@@ -395,9 +395,9 @@ begin
                                         end
                                         else WriteLog('ERROR: No SecondOperandHexDec delimiter found ('+TempOpcode+')');
                                       end
-                                      else WriteLog('ERROR: Invalid SecondOperandMask hex string ('+TempHexString+')');
+                                      else WriteLog('ERROR: Invalid SecondOperandMask hex string ('+string(TempHexString)+')');
                                     end
-                                    else WriteLog('ERROR: Odd SecondOperandMask length or Mask is longer than OperandBytes ('+TempHexString+')');
+                                    else WriteLog('ERROR: Odd SecondOperandMask length or Mask is longer than OperandBytes ('+string(TempHexString)+')');
                                   end
                                   else WriteLog('ERROR: No SecondOperandMask delimiter found ('+TempOpcode+')');
 
@@ -410,22 +410,22 @@ begin
                           end
                           else WriteLog('ERROR: No FirstOperandHexDec delimiter found ('+TempOpcode+')');
                         end
-                        else WriteLog('ERROR: Invalid FirstOperandMask hex string ('+TempHexString+')');
+                        else WriteLog('ERROR: Invalid FirstOperandMask hex string ('+string(TempHexString)+')');
                       end
-                      else WriteLog('ERROR: Odd FirstOperandMask length or Mask is longer than OperandBytes ('+TempHexString+')');
+                      else WriteLog('ERROR: Odd FirstOperandMask length or Mask is longer than OperandBytes ('+string(TempHexString)+')');
                     end
                     else WriteLog('ERROR: No FirstOperandMask delimiter found ('+TempOpcode+')');
 
                   end
-                  else WriteLog('ERROR: Invalid OperandBytes hex string ('+TempHexString+')');
+                  else WriteLog('ERROR: Invalid OperandBytes hex string ('+string(TempHexString)+')');
                 end
-                else WriteLog('ERROR: Odd OperandBytes length ('+TempHexString+')');
+                else WriteLog('ERROR: Odd OperandBytes length ('+string(TempHexString)+')');
               end
               else WriteLog('ERROR: No OperandBytes delimiter found ('+TempOpcode+')');
             end
-            else WriteLog('ERROR: Invalid OpcodeBytes hex string ('+TempHexString+')');
+            else WriteLog('ERROR: Invalid OpcodeBytes hex string ('+string(TempHexString)+')');
           end
-          else WriteLog('ERROR: Odd OpcodeBytes length or no OpcodeBytes ('+TempHexString+')');
+          else WriteLog('ERROR: Odd OpcodeBytes length or no OpcodeBytes ('+string(TempHexString)+')');
         end
         else WriteLog('ERROR: No OpcodeBytes delimiter found ('+TempOpcode+')');
       end;
