@@ -77,7 +77,7 @@ implementation
 type
   TIniSettings = record
     Name: string;
-    MaxInstructionByteCount: SmallInt;
+    MaxInstructionByteCount: Int16;
     OperandEndianness: string;
     FirstOperandWildcard: string;
     SecondOperandWildcard: string;
@@ -89,8 +89,8 @@ type
 
 var
   DasmTypesList: TStringList;
-  DasmTypesCount: SmallInt;
-  CurrentDasmType: SmallInt;
+  DasmTypesCount: Int16;
+  CurrentDasmType: Int16;
   IniSettings: Array[0..MaxDasmTypesCount-1] of TIniSettings;
 
 { TDasmConverter }
@@ -117,8 +117,8 @@ begin
 
   FMaxTypeSize := IniSettings[CurrentDasmType].MaxInstructionByteCount;
 
-  if (Lowercase(IniSettings[CurrentDasmType].DefinitionLogEnable) = 'dbg')
-     or (Lowercase(IniSettings[CurrentDasmType].DefinitionLogEnable) = 'debug')
+  if (AnsiLowerCase(IniSettings[CurrentDasmType].DefinitionLogEnable) = 'dbg')
+     or (AnsiLowerCase(IniSettings[CurrentDasmType].DefinitionLogEnable) = 'debug')
     then FTypeName := IniSettings[CurrentDasmType].Name+' ['+IntToStr(CpuDefinition.OpcodeCount)+']'
     else FTypeName := IniSettings[CurrentDasmType].Name;
 
@@ -143,7 +143,7 @@ procedure ReverseByteOrder(var Values: TBytes);
  eg. For Big Endian vs Little Endian system byte sequences.
 -------------------------------------------------------------------------------}
 var
-  Lp: SmallInt;
+  Lp: Int16;
   Value: Byte;
 begin
   for Lp := 0 to High(Values) div 2 do
@@ -204,7 +204,7 @@ var
   INIFileName: string;
   IniSection: string;
   DasmTypes: string;
-  Lp: SmallInt;
+  Lp: Int16;
 begin
   INIFileName:=ChangeFileExt(SysUtils.GetModuleName(HInstance), '.ini');
   if FileExists(INIFileName) then
@@ -247,7 +247,7 @@ begin
  Debug simply adds logging of CpuDefinition.DisassembleInstruction processing.
 -------------------------------------------------------------------------------}
 //              DefinitionLogEnable:=RegINI.ReadBool(IniSection, 'DefinitionLogEnable', False);
-              DefinitionLogEnable:=Uppercase(Trim(RegINI.ReadString(IniSection, 'DefinitionLogEnable', '')));
+              DefinitionLogEnable:=AnsiUpperCase(Trim(RegINI.ReadString(IniSection, 'DefinitionLogEnable', '')));
               DefinitionLogPath:=Trim(RegINI.ReadString(IniSection, 'DefinitionLogPath', ''));
 
             end;

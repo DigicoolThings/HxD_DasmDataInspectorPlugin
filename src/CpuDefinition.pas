@@ -56,7 +56,7 @@ type
 
     Private
       _OpcodeDefinitions: Array of TOpcodeDefinition;
-      _OpcodeFirstByteIndex: Array[0..$FF] of SmallInt;
+      _OpcodeFirstByteIndex: Array[0..$FF] of Int16;
       _LogFile: TextFile;
       _LogFilePath: string;
       _LogEnabled: boolean;
@@ -66,10 +66,10 @@ type
       _FirstOperandWildcard: string;
       _SecondOperandWildcard: string;
 
-      function _OpcodeCount: SmallInt;
+      function _OpcodeCount: Int16;
       function _GetOperandEndianness: string;
     Public
-      property OpcodeCount: SmallInt read _OpcodeCount;
+      property OpcodeCount: Int16 read _OpcodeCount;
       property OperandEndianness: string read _GetOperandEndianness;
       property FirstOperandWildcard: string read _FirstOperandWildcard;
       property SecondOperandWildcard: string read _SecondOperandWildcard;
@@ -78,7 +78,7 @@ type
                          FirstOperandWildcard: string = '?'; SecondOperandWildcard: string = '^'; LogLevel: string = ''; LogPath: String = '');
 
       procedure ReverseByteOrder(var Values: TBytes);
-      procedure WriteLog(LogString: string; LogBytes: TBytes = []; FlushLog: boolean = true);
+      procedure WriteLog(LogString: string; LogBytes: TBytes = nil; FlushLog: boolean = true);
 
       function DisassembleInstruction(ByteSequence: TBytes; out AssemblyString: string; out DisassembledByteCount: integer): boolean;
   end;
@@ -86,22 +86,86 @@ type
 
 implementation
 
+{-------------------------------------------------------------------------------
+ The following RTLVersion compiler directive was added by Maël Hörz to allow
+ support for compilation with Delphi XE6 and prior.
+ Adds simplified support for TBytes Insert/Delete missing in earlier Delphi.
+-------------------------------------------------------------------------------}
+{$IF RTLVersion <= 27.0}
+procedure Delete(var S: string; Index, Count: Integer); overload; inline;
+begin
+  System.Delete(S, Index, Count);
+end;
+
+procedure Delete(var Dest: TBytes; Index, Count: NativeInt); overload;
+var
+  L, N: NativeInt;
+  S, D: Pointer;
+begin
+  if Dest <> nil then
+  begin
+    L := Length(Dest);
+    if (Index >= 0) and (Index < L) and (Count > 0) then
+    begin
+      N := L - Index - Count;
+      if N < 0 then
+        N := 0;
+
+      D := @PByte(Dest)[Index];
+      S := @PByte(Dest)[(L - N)];
+      Move(S^, D^, N);
+      SetLength(Dest, Index + N);
+    end;
+  end;
+end;
+
+procedure Insert(const Source: Byte; var Dest: TBytes; Index: NativeInt);
+const
+  SourceLen = 1;
+var
+  DestLen, NewLen: NativeInt;
+begin
+  if Dest = nil then
+    DestLen := 0
+  else
+    DestLen := Length(Dest);
+  if Index < 0 then
+    Index := 0
+  else
+  begin
+    if Index > DestLen then
+      Index := DestLen;
+  end;
+
+  NewLen := DestLen + SourceLen;
+  if NewLen < 0 then   // overflow check
+    Error(reIntOverflow);
+  SetLength(Dest, NewLen);
+  if Index < DestLen then
+  begin
+    Move(PByte(Dest)[Index], PByte(Dest)[(Index + SourceLen)],
+      (DestLen - Index));
+  end;
+  PByte(Dest)[Index] := PByte(@Source)^
+end;
+{$ENDIF}
+
 { TCpuDefinition }
 
 constructor TCpuDefinition.Create(DefinitionFile, OperandEndianness: string; FirstOperandWildcard: string = '?'; SecondOperandWildcard: string = '^'; LogLevel: string = ''; LogPath: String = '');
 var Lp, ImportedOpcodeCount, DelimPos: Word;
     TempOpcode, DebugString: string;
-    TempHexString: AnsiString;
+    TempHexString: string;
     OpcodeList: TStringList;
     TempOpcodeDefinition: TOpcodeDefinition;
 
 begin
-  if (Lowercase(LogLevel) = 'dbg') or (Lowercase(LogLevel) = 'debug')
+  if (AnsiLowerCase(LogLevel) = 'dbg') or (AnsiLowerCase(LogLevel) = 'debug')
     then _LogLevel := LogDBG
     else _LogLevel := LogINF;
   _LogEnabled := ((Length(LogLevel) > 0) and (LogLevel[1] <> '0'));
   _LogAssigned := False;
-  if lowercase(LeftStr(OperandEndianness,3)) = 'big'
+  if AnsiLowerCase(LeftStr(OperandEndianness,3)) = 'big'
     then _OperandEndianness := BigEndian
     else _OperandEndianness := LittleEndian;
   if length(FirstOperandWildcard) > 0 then _FirstOperandWildcard := FirstOperandWildcard
@@ -136,7 +200,7 @@ begin
 {-------------------------------------------------------------------------------
  We also want to remove any CSV header line that may (optionally) be present.
 -------------------------------------------------------------------------------}
-        if LowerCase(LeftStr(OpcodeList[0],6)) = 'opcode' then OpcodeList.Delete(0);
+        if AnsiLowerCase(LeftStr(OpcodeList[0],6)) = 'opcode' then OpcodeList.Delete(0);
 {-------------------------------------------------------------------------------
  Now Sort the loaded CPU Opcode defintions into Hex OpcodeBytes sequence.
 -------------------------------------------------------------------------------}
@@ -161,12 +225,12 @@ begin
         DelimPos := Pos(',', TempOpcode);
         if (DelimPos > 0) then
         begin
-          TempHexString:=AnsiString(LowerCase(StringReplace(Copy(TempOpcode,1,DelimPos-1),' ','',[rfReplaceAll])));
+          TempHexString:=AnsiLowerCase(StringReplace(Copy(TempOpcode,1,DelimPos-1),' ','',[rfReplaceAll]));
           Delete(TempOpcode,1,DelimPos);
           if (DelimPos > 1) and not(Odd(Length(TempHexString))) then
           begin
             SetLength(TempOpcodeDefinition.OpcodeBytes,Length(TempHexString) div 2);
-            if (HexToBin(PAnsiChar(TempHexString),TempOpcodeDefinition.OpcodeBytes,Length(TempHexString) div 2) = Length(TempHexString) div 2) then
+            if (HexToBin(PChar(TempHexString),TempOpcodeDefinition.OpcodeBytes,Length(TempHexString) div 2) = Length(TempHexString) div 2) then
             begin
 {-------------------------------------------------------------------------------
  Next, process the OperandBytes column. Minimum Length is 0 (zero) Bytes
@@ -177,12 +241,12 @@ begin
               DelimPos := Pos(',', TempOpcode);
               if (DelimPos > 0) then
               begin
-                TempHexString:=AnsiString(LowerCase(StringReplace(Copy(TempOpcode,1,DelimPos-1),' ','',[rfReplaceAll])));
+                TempHexString:=AnsiLowerCase(StringReplace(Copy(TempOpcode,1,DelimPos-1),' ','',[rfReplaceAll]));
                 Delete(TempOpcode,1,DelimPos);
                 if not(Odd(Length(TempHexString))) then
                 begin
                   SetLength(TempOpcodeDefinition.OperandBytes,Length(TempHexString) div 2);
-                  if (HexToBin(PAnsiChar(TempHexString),TempOpcodeDefinition.OperandBytes,Length(TempHexString) div 2) = Length(TempHexString) div 2) then
+                  if (HexToBin(PChar(TempHexString),TempOpcodeDefinition.OperandBytes,Length(TempHexString) div 2) = Length(TempHexString) div 2) then
                   begin
 
 {-------------------------------------------------------------------------------
@@ -196,7 +260,7 @@ begin
                     DelimPos := Pos(',', TempOpcode);
                     if (DelimPos > 0) then
                     begin
-                      TempHexString:=AnsiString(LowerCase(StringReplace(Copy(TempOpcode,1,DelimPos-1),' ','',[rfReplaceAll])));
+                      TempHexString:=AnsiLowerCase(StringReplace(Copy(TempOpcode,1,DelimPos-1),' ','',[rfReplaceAll]));
                       Delete(TempOpcode,1,DelimPos);
                       if ((Length(TempHexString) div 2) <= Length(TempOpcodeDefinition.OperandBytes)) and not(Odd(Length(TempHexString))) then
                       begin
@@ -211,7 +275,7 @@ begin
                           then while (Length(TempHexString) div 2) < Length(TempOpcodeDefinition.OperandBytes) do TempHexString:='00'+TempHexString
                           else while (Length(TempHexString) div 2) < Length(TempOpcodeDefinition.OperandBytes) do TempHexString:=TempHexString+'00';
 
-                        if (HexToBin(PAnsiChar(TempHexString),TempOpcodeDefinition.FirstOperandMask,Length(TempHexString) div 2) = Length(TempHexString) div 2) then
+                        if (HexToBin(PChar(TempHexString),TempOpcodeDefinition.FirstOperandMask,Length(TempHexString) div 2) = Length(TempHexString) div 2) then
                         begin
 {-------------------------------------------------------------------------------
  Next, process the FirstOperandHexDec column. Valid CSV field values are blank,
@@ -223,10 +287,10 @@ begin
                           DelimPos := Pos(',', TempOpcode);
                           if (DelimPos > 0) then
                           begin
-                            TempHexString:=AnsiString(LowerCase(StringReplace(Copy(TempOpcode,1,DelimPos-1),' ','',[rfReplaceAll])));
+                            TempHexString:=AnsiLowerCase(StringReplace(Copy(TempOpcode,1,DelimPos-1),' ','',[rfReplaceAll]));
                             Delete(TempOpcode,1,DelimPos);
                             if (Length(TempHexString) = 0) then TempHexString := 'h';
-                            if (TempHexString[1] in ['h','d']) then
+                            if CharInSet(TempHexString[1], ['h','d']) then
                             begin
                               if TempHexString[1] = 'h' then TempOpcodeDefinition.FirstOperandHexDec := OperandHex
                                                         else TempOpcodeDefinition.FirstOperandHexDec := OperandDec;
@@ -240,10 +304,10 @@ begin
                               DelimPos := Pos(',', TempOpcode);
                               if (DelimPos > 0) then
                               begin
-                                TempHexString:=AnsiString(LowerCase(StringReplace(Copy(TempOpcode,1,DelimPos-1),' ','',[rfReplaceAll])));
+                                TempHexString:=AnsiLowerCase(StringReplace(Copy(TempOpcode,1,DelimPos-1),' ','',[rfReplaceAll]));
                                 Delete(TempOpcode,1,DelimPos);
                                 if (Length(TempHexString) = 0) then TempHexString := 'u';
-                                if (TempHexString[1] in ['s','u']) then
+                                if CharInSet(TempHexString[1], ['s','u']) then
                                 begin
                                   if TempHexString[1] = 'u' then TempOpcodeDefinition.FirstOperandSignedUnsigned := OperandUnsigned
                                                             else TempOpcodeDefinition.FirstOperandSignedUnsigned := OperandSigned;
@@ -259,7 +323,7 @@ begin
                                   DelimPos := Pos(',', TempOpcode);
                                   if (DelimPos > 0) then
                                   begin
-                                    TempHexString:=AnsiString(LowerCase(StringReplace(Copy(TempOpcode,1,DelimPos-1),' ','',[rfReplaceAll])));
+                                    TempHexString:=AnsiLowerCase(StringReplace(Copy(TempOpcode,1,DelimPos-1),' ','',[rfReplaceAll]));
                                     Delete(TempOpcode,1,DelimPos);
                                     if ((Length(TempHexString) div 2) <= Length(TempOpcodeDefinition.OperandBytes)) and not(Odd(Length(TempHexString))) then
                                     begin
@@ -274,7 +338,7 @@ begin
                                         then while (Length(TempHexString) div 2) < Length(TempOpcodeDefinition.OperandBytes) do TempHexString:='00'+TempHexString
                                         else while (Length(TempHexString) div 2) < Length(TempOpcodeDefinition.OperandBytes) do TempHexString:=TempHexString+'00';
 
-                                      if (HexToBin(PAnsiChar(TempHexString),TempOpcodeDefinition.SecondOperandMask,Length(TempHexString) div 2) = Length(TempHexString) div 2) then
+                                      if (HexToBin(PChar(TempHexString),TempOpcodeDefinition.SecondOperandMask,Length(TempHexString) div 2) = Length(TempHexString) div 2) then
                                       begin
 {-------------------------------------------------------------------------------
  Next, process the SecondOperandHexDec column. Valid CSV field values are blank,
@@ -286,10 +350,10 @@ begin
                                         DelimPos := Pos(',', TempOpcode);
                                         if (DelimPos > 0) then
                                         begin
-                                          TempHexString:=AnsiString(LowerCase(StringReplace(Copy(TempOpcode,1,DelimPos-1),' ','',[rfReplaceAll])));
+                                          TempHexString:=AnsiLowerCase(StringReplace(Copy(TempOpcode,1,DelimPos-1),' ','',[rfReplaceAll]));
                                           Delete(TempOpcode,1,DelimPos);
                                           if (Length(TempHexString) = 0) then TempHexString := 'h';
-                                          if (TempHexString[1] in ['h','d']) then
+                                          if CharInSet(TempHexString[1], ['h','d']) then
                                           begin
                                             if TempHexString[1] = 'h' then TempOpcodeDefinition.SecondOperandHexDec := OperandHex
                                                                       else TempOpcodeDefinition.SecondOperandHexDec := OperandDec;
@@ -303,10 +367,10 @@ begin
                                             DelimPos := Pos(',', TempOpcode);
                                             if (DelimPos > 0) then
                                             begin
-                                              TempHexString:=AnsiString(LowerCase(StringReplace(Copy(TempOpcode,1,DelimPos-1),' ','',[rfReplaceAll])));
+                                              TempHexString:=AnsiLowerCase(StringReplace(Copy(TempOpcode,1,DelimPos-1),' ','',[rfReplaceAll]));
                                               Delete(TempOpcode,1,DelimPos);
                                               if (Length(TempHexString) = 0) then TempHexString := 'u';
-                                              if (TempHexString[1] in ['s','u']) then
+                                              if CharInSet(TempHexString[1], ['s','u']) then
                                               begin
                                                 if TempHexString[1] = 'u' then TempOpcodeDefinition.SecondOperandSignedUnsigned := OperandUnsigned
                                                                           else TempOpcodeDefinition.SecondOperandSignedUnsigned := OperandSigned;
@@ -395,9 +459,9 @@ begin
                                         end
                                         else WriteLog('ERROR: No SecondOperandHexDec delimiter found ('+TempOpcode+')');
                                       end
-                                      else WriteLog('ERROR: Invalid SecondOperandMask hex string ('+string(TempHexString)+')');
+                                      else WriteLog('ERROR: Invalid SecondOperandMask hex string ('+TempHexString+')');
                                     end
-                                    else WriteLog('ERROR: Odd SecondOperandMask length or Mask is longer than OperandBytes ('+string(TempHexString)+')');
+                                    else WriteLog('ERROR: Odd SecondOperandMask length or Mask is longer than OperandBytes ('+TempHexString+')');
                                   end
                                   else WriteLog('ERROR: No SecondOperandMask delimiter found ('+TempOpcode+')');
 
@@ -410,22 +474,22 @@ begin
                           end
                           else WriteLog('ERROR: No FirstOperandHexDec delimiter found ('+TempOpcode+')');
                         end
-                        else WriteLog('ERROR: Invalid FirstOperandMask hex string ('+string(TempHexString)+')');
+                        else WriteLog('ERROR: Invalid FirstOperandMask hex string ('+TempHexString+')');
                       end
-                      else WriteLog('ERROR: Odd FirstOperandMask length or Mask is longer than OperandBytes ('+string(TempHexString)+')');
+                      else WriteLog('ERROR: Odd FirstOperandMask length or Mask is longer than OperandBytes ('+TempHexString+')');
                     end
                     else WriteLog('ERROR: No FirstOperandMask delimiter found ('+TempOpcode+')');
 
                   end
-                  else WriteLog('ERROR: Invalid OperandBytes hex string ('+string(TempHexString)+')');
+                  else WriteLog('ERROR: Invalid OperandBytes hex string ('+TempHexString+')');
                 end
-                else WriteLog('ERROR: Odd OperandBytes length ('+string(TempHexString)+')');
+                else WriteLog('ERROR: Odd OperandBytes length ('+TempHexString+')');
               end
               else WriteLog('ERROR: No OperandBytes delimiter found ('+TempOpcode+')');
             end
-            else WriteLog('ERROR: Invalid OpcodeBytes hex string ('+string(TempHexString)+')');
+            else WriteLog('ERROR: Invalid OpcodeBytes hex string ('+TempHexString+')');
           end
-          else WriteLog('ERROR: Odd OpcodeBytes length or no OpcodeBytes ('+string(TempHexString)+')');
+          else WriteLog('ERROR: Odd OpcodeBytes length or no OpcodeBytes ('+TempHexString+')');
         end
         else WriteLog('ERROR: No OpcodeBytes delimiter found ('+TempOpcode+')');
       end;
@@ -445,7 +509,7 @@ procedure TCpuDefinition.ReverseByteOrder(var Values: TBytes);
  eg. For Big Endian vs Little Endian system byte sequences.
 -------------------------------------------------------------------------------}
 var
-  Lp: SmallInt;
+  Lp: Int16;
   Value: Byte;
 begin
   for Lp := 0 to High(Values) div 2 do
@@ -456,7 +520,7 @@ begin
   end;
 end;
 
-function TCpuDefinition._OpcodeCount: SmallInt;
+function TCpuDefinition._OpcodeCount: Int16;
 begin
   try
     Result:=Length(_OpcodeDefinitions);
@@ -472,7 +536,7 @@ begin
     else Result := 'Little';
 end;
 
-procedure TCpuDefinition.WriteLog(LogString: string; LogBytes: TBytes = []; FlushLog: boolean = true);
+procedure TCpuDefinition.WriteLog(LogString: string; LogBytes: TBytes = nil; FlushLog: boolean = true);
 {-------------------------------------------------------------------------------
  A simplified / cut-down WriteLog procedure from my own log handling unit,
  which I've just embedded within the CpuDefintion class for the simple logging
@@ -528,21 +592,21 @@ function TCpuDefinition.DisassembleInstruction(ByteSequence: TBytes; out Assembl
  The return value is True if successful / False if unable to Disassemble.
 -------------------------------------------------------------------------------}
 var
-  ByteIndex, ByteOffset, OpcodeBytesLength, OperandBytesLength: SmallInt;
+  ByteIndex, ByteOffset, OpcodeBytesLength, OperandBytesLength: Int16;
   MatchFound, OpcodeMatch, OperandMatch: boolean;
   TempBytes: TBytes;
   InvertedOperandMask: TBytes;
   FirstOperandMask, FirstOperandBytes: TBytes;
   FirstOperandStr: string;
-  FirstOperandLength: SmallInt;
+  FirstOperandLength: Int16;
   SecondOperandMask, SecondOperandBytes: TBytes;
   SecondOperandStr: string;
-  SecondOperandLength: SmallInt;
+  SecondOperandLength: Int16;
   isFirstOperandMsbSet, isSecondOperandMsbSet: boolean;
   Carry, MsbMask: byte;
   Lp: Integer;
 
-  function GetOperandStr(var prmOperandHexDec: TOperandRender; var prmOperandSignedUnsigned: TOperandType; var prmOperandLength: SmallInt; var prmOperandBytes: TBytes): string;
+  function GetOperandStr(var prmOperandHexDec: TOperandRender; var prmOperandSignedUnsigned: TOperandType; var prmOperandLength: Int16; var prmOperandBytes: TBytes): string;
 {-------------------------------------------------------------------------------
  Return the appropriate string representation of prmOperandBytes, for rendering.
  If Hex format then we need to seperately handle Signed vs Unsigned values.
@@ -654,7 +718,7 @@ var
   end;
 
 (*
-  function GetOperandStr(var prmOperandHexDec: TOperandRender; var prmOperandSignedUnsigned: TOperandType; var prmOperandLength: SmallInt; var prmOperandBytes: TBytes): string;
+  function GetOperandStr(var prmOperandHexDec: TOperandRender; var prmOperandSignedUnsigned: TOperandType; var prmOperandLength: Int16; var prmOperandBytes: TBytes): string;
 {-------------------------------------------------------------------------------
  Return the appropriate string representation of prmOperandBytes, for rendering.
  If Hex format then we need to seperately handle Signed vs Unsigned values.
