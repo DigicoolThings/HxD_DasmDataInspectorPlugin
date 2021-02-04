@@ -63,7 +63,7 @@ The .csv definition files (configured and referenced from the .ini file), have r
 - FirstOperandSignedUnsigned: As above for the first Operand, this determines if any extracted second Operand should be treated as a Signed or Unsigned value.
 - AssemblyString: The Disassembled instruction string that is to be rendered in the HxD data inspector. The .ini file specifies first and second Operand wildcard characters (or strings), which you include to identify where the extracted / formatted Operand(s) should be substituted into the string. 
 
-Reviewing the above, in combination with the various included (completed) .csv files (and the currently incomplete Dasm6809.csv file), should clarify the definition file structure. 
+Reviewing the above, in combination with the various included (completed) .csv files, should help clarify the definition file structure. 
 
 ## Features
 
