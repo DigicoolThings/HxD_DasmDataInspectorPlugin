@@ -231,7 +231,20 @@ begin
             IniSection:=DasmTypesList[Lp];
             with IniSettings[Lp] do
             begin
-              Name:=Trim(RegINI.ReadString(IniSection, 'Name', 'Set Name in INI file!'));
+{-------------------------------------------------------------------------------
+ For each DasmType we set the Name of the Disassembly type by utilising the
+ DataInspectorPlugin string variable facility for automatic localizing of the
+ "Disassembly" name, as it appears in the HxD DataInspector grid.
+ The resulting Name will therefore be in the form "Disassembly (xxx)", where
+ xxx is the .ini specified DasmType (IniSection name).
+ Note that any embedded double quotes in the provided DasmType are escaped,
+ (as required by the string cariable facility).
+ ------------------------------------------------------------------------------}
+              Name:='{s:Disassembly("'+StringReplace(IniSection,'"','""',[rfReplaceAll])+'")}';
+
+{-------------------------------------------------------------------------------
+ Now we load the IniSection options specified for this DasmType
+ ------------------------------------------------------------------------------}
               MaxInstructionByteCount:=RegINI.ReadInteger(IniSection, 'MaxInstructionByteCount', 1);
 
               OperandEndianness:=Trim(RegINI.ReadString(IniSection, 'OperandEndianness', 'Little'));
