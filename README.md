@@ -54,13 +54,13 @@ The .csv definition files (configured and referenced from the .ini file), have r
 ## CSV file column descriptions
 
 - OpcodeBytes: The fixed (static) bytes, specified in Hex, that comprise each unique instruction Opcode.
-- OperandBytes: Any additional Hex Bytes that make up the full instruction and contain the instruction Operand(s). Multi-byte Operands are specified in the byte sequence that they appear in memory. The extracted Operand(s) will however respect the target CPU's Endianness (specified in the .ini file).  
+- OperandBytes: Any additional Hex Bytes that make up the full instruction and contain the instruction Operand(s). Multi-byte Operands are specified in the byte sequence that they appear in memory. The extracted Operand(s) will however respect the target CPU's Endianness (specified in the .ini file).
 - FirstOperandMask: The Hex bit mask that identifies the first Operand to be extracted from the Operand Bytes.
-- FirstOperandHexDec: Determines if the extracted first Operand should be rendered in Hex or Decimal format.
-- FirstOperandSignedUnsigned: Determines if the extracted first Operand should be treated as a Signed or Unsigned value. Typically, Signed is used for Relative reference Operands.  
+- FirstOperandHexDec: Determines if the extracted first Operand should be rendered in Hex (`H`) or Decimal (`D`) format.
+- FirstOperandSignedUnsigned: Determines if the extracted first Operand should be treated as a Signed (`S`) or Unsigned (`U`) value. Typically, Signed is used for Relative reference Operands.  
 - SecondOperandMask: As for FirstOperandMask, this is the Hex bit mask that identifies any required second Operand to be extracted from the Operand Bytes.
 - SecondOperandHexDec: As above for the first Operand, this determines if any extracted second Operand should be rendered in Hex or Decimal format.
-- FirstOperandSignedUnsigned: As above for the first Operand, this determines if any extracted second Operand should be treated as a Signed or Unsigned value.
+- SecondOperandSignedUnsigned: As above for the first Operand, this determines if any extracted second Operand should be treated as a Signed or Unsigned value.
 - AssemblyString: The Disassembled instruction string that is to be rendered in the HxD data inspector. The .ini file specifies first and second Operand wildcard characters (or strings), which you include to identify where the extracted / formatted Operand(s) should be substituted into the string.
 
 Reviewing the above, in combination with the various included (completed) .csv files, should help clarify the definition file structure.
