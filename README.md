@@ -88,8 +88,9 @@ Reviewing the above, in combination with the various included (completed) .csv f
 - Western Design Center (WDC) 65C816 8/16-bit CPU (Dasm65C816.csv) - Complete
 - Motorola MC6809 8/16-bit CPU (Dasm6809.csv) - Complete
 - Sony SPC700 8-bit CPU - Complete (contributed by exodustx0)
+- Intel 8085(A) 8-bit CPU - Complete (contributed by schnepe2)
 
-All the Complete definitions have been carefully checked, however if you identify any coding errors please raise an issue so these can be corrected.
+All the Complete definitions have been carefully checked, however if you identify any coding errors please raise an issue or cummunicate with the contributer, so these can be corrected.
 
 Of Note:
 - Currently only the W65C02S, 65C816 and SPC700 definitions include instructions having two Operands.
